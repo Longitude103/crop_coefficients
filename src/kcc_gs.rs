@@ -1,15 +1,44 @@
 use crate::kc_gdd::adjust_kc;
 use chrono::NaiveDate;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs;
 
 
 // Crop Coefficients GS struct to hold the mean coefficients for each crop stage using growth stage days, it contains the length of the
 // period in days and the end Kc for each stage. Should use the FAO-56 crop coefficients.
+#[derive(Debug)]
 pub struct CropCoefficientsGs {
     crop_name: String,
     initial_end_kc: (u16, f32),
     development_end_kc: (u16, f32),
     mid_end_kc: (u16, f32),
     late_end_kc: (u16, f32),
+}
+
+// Define the Crop struct for individual crop data
+#[derive(Debug, Serialize, Deserialize)]
+struct Crop {
+    name: String,
+    k_ini: f64,              // Initial stage coefficient
+    k_mid: f64,              // Mid-season coefficient
+    k_end: f64,              // Late-season coefficient
+    height_m: f64,           // Crop height in meters
+    growth_stages_days: Vec<i32>,  // Growth stages in days [initial, dev, mid, late]
+}
+
+// Define the Climate struct for climate data
+#[derive(Debug, Serialize, Deserialize)]
+struct Climate {
+    u2: f64,        // Wind speed at 2m height (m/s)
+    rh_min: f64,    // Minimum relative humidity (%)
+}
+
+// Define the root Config struct with a HashMap for crops
+#[derive(Debug, Serialize, Deserialize)]
+struct CropKcData {
+    crops: HashMap<String, Crop>,
+    climate: Climate,
 }
 
 impl CropCoefficientsGs {
@@ -56,13 +85,13 @@ impl CropCoefficientsGs {
 ///
 /// # Returns
 ///
-/// A `(String, f32)` representing the name of the corp and the calculated crop coefficient (Kc) adjusted if given environmental conditions.
+/// A `(String, f32)` representing the name of the crop and the calculated crop coefficient (Kc) adjusted if given environmental conditions.
 pub fn crop_coefficient_gs(planting_date: NaiveDate, date: NaiveDate, cc: CropCoefficientsGs, wind_speed: Option<f32>, rh_min: Option<f32>, crop_height: Option<f32>) -> (String, f32) {
     let wind_speed = wind_speed.unwrap_or(2.0);
     let mut rh_min = rh_min.unwrap_or(45.0);
     let crop_height = crop_height.unwrap_or(1.391);
 
-    let days_since_planting = (date.signed_duration_since(planting_date).num_days() as u16);
+    let days_since_planting = date.signed_duration_since(planting_date).num_days() as u16;
 
     if rh_min < 1.0 {
         rh_min *= 100.0; // Convert to percentage
@@ -88,5 +117,62 @@ pub fn crop_coefficient_gs(planting_date: NaiveDate, date: NaiveDate, cc: CropCo
         } else {
             (cc.crop_name, (kc_org * 100.0) / 100.0) // Kc for end stage with default adjustment if Kc is less than 0.45
         }
+    }
+}
+
+fn load_crop_coefficients() -> Result<Vec<CropCoefficientsGs>, Box<dyn std::error::Error>> {
+    // Read and parse the TOML file
+    let toml_str = fs::read_to_string("fao56.toml")?;
+    let crop_data: CropKcData = toml::from_str(&toml_str)?;
+
+    // Convert the HashMap of crops into a Vec of CropCoefficientsGs
+    let result: Vec<CropCoefficientsGs> = crop_data.crops.into_values().map(|crop| {
+        // Calculate cumulative days for each stage end
+        let initial_days = crop.growth_stages_days[0] as u16;
+        let development_days = (crop.growth_stages_days[0] + crop.growth_stages_days[1]) as u16;
+        let mid_days = (crop.growth_stages_days[0] + crop.growth_stages_days[1] +
+            crop.growth_stages_days[2]) as u16;
+        let late_days = (crop.growth_stages_days[0] + crop.growth_stages_days[1] +
+            crop.growth_stages_days[2] + crop.growth_stages_days[3]) as u16;
+
+        // Use the new method to create the struct
+        CropCoefficientsGs::new(
+            crop.name,
+            (initial_days, crop.k_ini as f32),
+            (development_days, crop.k_mid as f32),  // Using k_mid as end of development
+            (mid_days, crop.k_mid as f32),
+            (late_days, crop.k_end as f32),
+        )
+    })
+        .collect();
+
+    Ok(result)
+}
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_load_crop_coefficients() {
+        let result = load_crop_coefficients();
+        if result.is_err() {
+            panic!("Error loading crop coefficients: {}", result.unwrap_err())
+        }
+
+        let crop_coefficients = result.unwrap();
+        assert_eq!(crop_coefficients.len(), 12);
+
+        // find a corn crop and check its coefficients
+        let corn_coefficients = crop_coefficients.iter().find(|c| c.crop_name == "corn");
+        assert!(corn_coefficients.is_some());
+        let corn_coefficient = corn_coefficients.unwrap();
+        assert_eq!(corn_coefficient.initial_end_kc.0, 20);
+        assert_eq!(corn_coefficient.initial_end_kc.1, 0.30);
+        assert_eq!(corn_coefficient.development_end_kc.0, 50);
+        assert_eq!(corn_coefficient.development_end_kc.1, 1.20);
+        assert_eq!(corn_coefficient.mid_end_kc.0, 100);
+        assert_eq!(corn_coefficient.mid_end_kc.1, 1.20);
+        assert_eq!(corn_coefficient.late_end_kc.0, 120);
+        assert_eq!(corn_coefficient.late_end_kc.1, 0.60);
     }
 }

@@ -1,0 +1,102 @@
+# crop_coefficients.toml - FAO-56 Crop Coefficients and Related Data
+
+[crops]
+[crops.winter_wheat]
+name = "winter_wheat"
+k_ini = 0.15  # Initial stage
+k_mid = 1.15  # Mid-season
+k_end = 0.35  # Late-season
+height_m = 1.0  # Crop height in meters
+growth_stages_days = [20, 30, 40, 20]  # Initial, dev, mid, late (days)
+
+[crops.spring_wheat]
+name = "spring_wheat"
+k_ini = 0.15
+k_mid = 1.15
+k_end = 0.30
+height_m = 1.0
+growth_stages_days = [20, 30, 40, 20]
+
+[crops.corn]
+name = "corn"
+k_ini = 0.30
+k_mid = 1.20
+k_end = 0.60
+height_m = 2.0
+growth_stages_days = [20, 30, 50, 20]
+
+[crops.sorghum]
+name = "sorghum"
+k_ini = 0.30
+k_mid = 1.00
+k_end = 0.55
+height_m = 1.5
+growth_stages_days = [20, 30, 50, 20]
+
+[crops.barley]
+name = "barley"
+k_ini = 0.15
+k_mid = 1.10
+k_end = 0.25
+height_m = 0.8
+growth_stages_days = [20, 30, 40, 20]
+
+[crops.oats]
+name = "oats"
+k_ini = 0.15
+k_mid = 1.10
+k_end = 0.25
+height_m = 0.8
+growth_stages_days = [20, 30, 40, 20]
+
+[crops.soybean]
+name = "soybean"
+k_ini = 0.40
+k_mid = 1.15
+k_end = 0.50
+height_m = 0.8
+growth_stages_days = [20, 30, 50, 20]
+
+[crops.sunflower]
+name = "sunflower"
+k_ini = 0.35
+k_mid = 1.15
+k_end = 0.35
+height_m = 1.5
+growth_stages_days = [20, 30, 50, 20]
+
+[crops.potato]
+name = "potato"
+k_ini = 0.50
+k_mid = 1.15
+k_end = 0.75
+height_m = 0.6
+growth_stages_days = [20, 30, 50, 20]
+
+[crops.sugarbeet]
+name = "sugarbeet"
+k_ini = 0.35
+k_mid = 1.20
+k_end = 0.70
+height_m = 0.5
+growth_stages_days = [20, 30, 70, 20]
+
+[crops.onion]
+name = "onion"
+k_ini = 0.70
+k_mid = 1.05
+k_end = 0.75
+height_m = 0.4
+growth_stages_days = [20, 30, 50, 20]
+
+[crops.bean]
+name = "bean"
+k_ini = 0.50
+k_mid = 1.15
+k_end = 0.35
+height_m = 0.5
+growth_stages_days = [20, 30, 40, 20]
+
+[climate]
+u2 = 2.0  # Wind speed at 2m height (m/s) - typical for subhumid conditions
+rh_min = 45.0  # Minimum relative humidity (%) - typical for subhumid conditions
