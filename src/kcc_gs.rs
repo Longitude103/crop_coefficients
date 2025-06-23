@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 
-
 // Crop Coefficients GS struct to hold the mean coefficients for each crop stage using growth stage days, it contains the length of the
 // period in days and the end Kc for each stage. Should use the FAO-56 crop coefficients.
 #[derive(Debug)]
@@ -20,18 +19,18 @@ pub struct CropCoefficientsGs {
 #[derive(Debug, Serialize, Deserialize)]
 struct Crop {
     name: String,
-    k_ini: f64,              // Initial stage coefficient
-    k_mid: f64,              // Mid-season coefficient
-    k_end: f64,              // Late-season coefficient
-    height_m: f64,           // Crop height in meters
-    growth_stages_days: Vec<i32>,  // Growth stages in days [initial, dev, mid, late]
+    k_ini: f64,                   // Initial stage coefficient
+    k_mid: f64,                   // Mid-season coefficient
+    k_end: f64,                   // Late-season coefficient
+    height_m: f64,                // Crop height in meters
+    growth_stages_days: Vec<i32>, // Growth stages in days [initial, dev, mid, late]
 }
 
 // Define the Climate struct for climate data
 #[derive(Debug, Serialize, Deserialize)]
 struct Climate {
-    u2: f64,        // Wind speed at 2m height (m/s)
-    rh_min: f64,    // Minimum relative humidity (%)
+    u2: f64,     // Wind speed at 2m height (m/s)
+    rh_min: f64, // Minimum relative humidity (%)
 }
 
 // Define the root Config struct with a HashMap for crops
@@ -55,9 +54,19 @@ impl CropCoefficientsGs {
     /// # Returns
     ///
     /// A `CropCoefficients` struct initialized with the provided parameters. Panics if any Kc value exceeds 2.
-    pub fn new(crop_name: String, initial_end_kc: (u16, f32), development_end_kc: (u16, f32), mid_end_kc: (u16, f32), late_end_kc: (u16, f32)) -> CropCoefficientsGs {
+    pub fn new(
+        crop_name: String,
+        initial_end_kc: (u16, f32),
+        development_end_kc: (u16, f32),
+        mid_end_kc: (u16, f32),
+        late_end_kc: (u16, f32),
+    ) -> CropCoefficientsGs {
         // check if Kc cannot exceed 2
-        if initial_end_kc.1 > 2.0 || development_end_kc.1 > 2.0 || mid_end_kc.1 > 2.0 || late_end_kc.1 > 2.0 {
+        if initial_end_kc.1 > 2.0
+            || development_end_kc.1 > 2.0
+            || mid_end_kc.1 > 2.0
+            || late_end_kc.1 > 2.0
+        {
             panic!("Kc cannot exceed 2.");
         }
 
@@ -86,7 +95,14 @@ impl CropCoefficientsGs {
 /// # Returns
 ///
 /// A `(String, f32)` representing the name of the crop and the calculated crop coefficient (Kc) adjusted if given environmental conditions.
-pub fn crop_coefficient_gs(planting_date: NaiveDate, date: NaiveDate, cc: CropCoefficientsGs, wind_speed: Option<f32>, rh_min: Option<f32>, crop_height: Option<f32>) -> (String, f32) {
+pub fn crop_coefficient_gs(
+    planting_date: NaiveDate,
+    date: NaiveDate,
+    cc: CropCoefficientsGs,
+    wind_speed: Option<f32>,
+    rh_min: Option<f32>,
+    crop_height: Option<f32>,
+) -> (String, f32) {
     let wind_speed = wind_speed.unwrap_or(2.0);
     let mut rh_min = rh_min.unwrap_or(45.0);
     let crop_height = crop_height.unwrap_or(1.391);
@@ -101,19 +117,40 @@ pub fn crop_coefficient_gs(planting_date: NaiveDate, date: NaiveDate, cc: CropCo
         (cc.crop_name, (cc.initial_end_kc.1 * 100.0).round() / 100.0) // Kc for initial stage
     } else if days_since_planting <= cc.development_end_kc.0 {
         // Interpolation between initial and development stages
-        (cc.crop_name, ((cc.initial_end_kc.1 + (cc.development_end_kc.1 - cc.initial_end_kc.1) * ((days_since_planting - cc.initial_end_kc.0) / (cc.development_end_kc.0 - cc.initial_end_kc.0)) as f32) * 100.0) / 100.0) // Kc for development stage
+        (
+            cc.crop_name,
+            ((cc.initial_end_kc.1
+                + (cc.development_end_kc.1 - cc.initial_end_kc.1)
+                    * ((days_since_planting - cc.initial_end_kc.0)
+                        / (cc.development_end_kc.0 - cc.initial_end_kc.0))
+                        as f32)
+                * 100.0)
+                / 100.0,
+        ) // Kc for development stage
     } else if days_since_planting <= cc.mid_end_kc.0 {
         // Interpolation between development and mid-season stages
-        let kc_org = cc.development_end_kc.1 + (cc.mid_end_kc.1 - cc.development_end_kc.1) * ((days_since_planting - cc.development_end_kc.0) / (cc.mid_end_kc.0 - cc.development_end_kc.0)) as f32;
+        let kc_org = cc.development_end_kc.1
+            + (cc.mid_end_kc.1 - cc.development_end_kc.1)
+                * ((days_since_planting - cc.development_end_kc.0)
+                    / (cc.mid_end_kc.0 - cc.development_end_kc.0)) as f32;
         // Adjust Kc based on crop height and wind speed to compensate for arid and windy conditions
-        (cc.crop_name, (adjust_kc(kc_org, wind_speed, rh_min, crop_height) * 100.0) / 100.0) // Kc for mid-season stage
+        (
+            cc.crop_name,
+            (adjust_kc(kc_org, wind_speed, rh_min, crop_height) * 100.0) / 100.0,
+        ) // Kc for mid-season stage
     } else {
         // Interpolation between mid-season and end stages
-        let kc_org = cc.mid_end_kc.1 - (cc.mid_end_kc.1 - cc.late_end_kc.1) * ((days_since_planting - cc.late_end_kc.0) / (cc.mid_end_kc.0 - cc.late_end_kc.0)) as f32;
+        let kc_org = cc.mid_end_kc.1
+            - (cc.mid_end_kc.1 - cc.late_end_kc.1)
+                * ((days_since_planting - cc.late_end_kc.0) / (cc.mid_end_kc.0 - cc.late_end_kc.0))
+                    as f32;
         // let kc_org = (cc.development_end_kc.1 - ((cumulative_gdd - cc.mid_end_kc.0) / cc.late_end_kc.0)).max(cc.late_end_kc.1);
         // Adjust Kc based on crop height and wind speed if it's larger than 0.45
         if kc_org > 0.45 {
-            (cc.crop_name, (adjust_kc(kc_org, wind_speed, rh_min, crop_height) * 100.0) / 100.0) // Kc for end stage
+            (
+                cc.crop_name,
+                (adjust_kc(kc_org, wind_speed, rh_min, crop_height) * 100.0) / 100.0,
+            ) // Kc for end stage
         } else {
             (cc.crop_name, (kc_org * 100.0) / 100.0) // Kc for end stage with default adjustment if Kc is less than 0.45
         }
@@ -126,29 +163,36 @@ fn load_crop_coefficients() -> Result<Vec<CropCoefficientsGs>, Box<dyn std::erro
     let crop_data: CropKcData = toml::from_str(&toml_str)?;
 
     // Convert the HashMap of crops into a Vec of CropCoefficientsGs
-    let result: Vec<CropCoefficientsGs> = crop_data.crops.into_values().map(|crop| {
-        // Calculate cumulative days for each stage end
-        let initial_days = crop.growth_stages_days[0] as u16;
-        let development_days = (crop.growth_stages_days[0] + crop.growth_stages_days[1]) as u16;
-        let mid_days = (crop.growth_stages_days[0] + crop.growth_stages_days[1] +
-            crop.growth_stages_days[2]) as u16;
-        let late_days = (crop.growth_stages_days[0] + crop.growth_stages_days[1] +
-            crop.growth_stages_days[2] + crop.growth_stages_days[3]) as u16;
+    let result: Vec<CropCoefficientsGs> = crop_data
+        .crops
+        .into_values()
+        .map(|crop| {
+            // Calculate cumulative days for each stage end
+            let initial_days = crop.growth_stages_days[0] as u16;
+            let development_days = (crop.growth_stages_days[0] + crop.growth_stages_days[1]) as u16;
+            let mid_days = (crop.growth_stages_days[0]
+                + crop.growth_stages_days[1]
+                + crop.growth_stages_days[2]) as u16;
+            let late_days = (crop.growth_stages_days[0]
+                + crop.growth_stages_days[1]
+                + crop.growth_stages_days[2]
+                + crop.growth_stages_days[3]) as u16;
 
-        // Use the new method to create the struct
-        CropCoefficientsGs::new(
-            crop.name,
-            (initial_days, crop.k_ini as f32),
-            (development_days, crop.k_mid as f32),  // Using k_mid as end of development
-            (mid_days, crop.k_mid as f32),
-            (late_days, crop.k_end as f32),
-        )
-    })
+            // Use the new method to create the struct
+            CropCoefficientsGs::new(
+                crop.name,
+                (initial_days, crop.k_ini as f32),
+                (development_days, crop.k_mid as f32), // Using k_mid as end of development
+                (mid_days, crop.k_mid as f32),
+                (late_days, crop.k_end as f32),
+            )
+        })
         .collect();
 
     Ok(result)
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
