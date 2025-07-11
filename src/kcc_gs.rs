@@ -157,7 +157,7 @@ pub fn crop_coefficient_gs(
     }
 }
 
-fn load_crop_coefficients() -> Result<Vec<CropCoefficientsGs>, Box<dyn std::error::Error>> {
+pub fn load_crop_coefficients() -> Result<Vec<CropCoefficientsGs>, Box<dyn std::error::Error>> {
     // Read and parse the TOML file
     let toml_str = fs::read_to_string("fao56.toml")?;
     let crop_data: CropKcData = toml::from_str(&toml_str)?;
