@@ -3,11 +3,12 @@
 [crops]
 [crops.winter_wheat]
 name = "winter_wheat"
-k_ini = 0.15  # Initial stage
-k_mid = 1.15  # Mid-season
-k_end = 0.35  # Late-season
-height_m = 1.0  # Crop height in meters
-growth_stages_days = [20, 30, 40, 20]  # Initial, dev, mid, late (days)
+k_ini = 0.15                          # Initial stage
+k_mid = 1.15                          # Mid-season
+k_end = 0.35                          # Late-season
+height_m = 1.0                        # Crop height in meters
+growth_stages_days = [20, 30, 40, 20] # Initial, dev, mid, late (days)
+planting_date = "2023-09-01"
 
 [crops.spring_wheat]
 name = "spring_wheat"
@@ -16,6 +17,7 @@ k_mid = 1.15
 k_end = 0.30
 height_m = 1.0
 growth_stages_days = [20, 30, 40, 20]
+planting_date = "2023-03-01"
 
 [crops.corn]
 name = "corn"
@@ -24,6 +26,7 @@ k_mid = 1.20
 k_end = 0.60
 height_m = 2.0
 growth_stages_days = [20, 30, 50, 20]
+planting_date = "2023-04-20"
 
 [crops.sorghum]
 name = "sorghum"
@@ -32,6 +35,7 @@ k_mid = 1.00
 k_end = 0.55
 height_m = 1.5
 growth_stages_days = [20, 30, 50, 20]
+planting_date = "2023-05-15"
 
 [crops.barley]
 name = "barley"
@@ -40,6 +44,7 @@ k_mid = 1.10
 k_end = 0.25
 height_m = 0.8
 growth_stages_days = [20, 30, 40, 20]
+planting_date = "2023-04-01"
 
 [crops.oats]
 name = "oats"
@@ -48,6 +53,7 @@ k_mid = 1.10
 k_end = 0.25
 height_m = 0.8
 growth_stages_days = [20, 30, 40, 20]
+planting_date = "2023-06-01"
 
 [crops.soybean]
 name = "soybean"
@@ -56,6 +62,7 @@ k_mid = 1.15
 k_end = 0.50
 height_m = 0.8
 growth_stages_days = [20, 30, 50, 20]
+planting_date = "2023-05-15"
 
 [crops.sunflower]
 name = "sunflower"
@@ -64,6 +71,7 @@ k_mid = 1.15
 k_end = 0.35
 height_m = 1.5
 growth_stages_days = [20, 30, 50, 20]
+planting_date = "2023-05-01"
 
 [crops.potato]
 name = "potato"
@@ -72,6 +80,7 @@ k_mid = 1.15
 k_end = 0.75
 height_m = 0.6
 growth_stages_days = [20, 30, 50, 20]
+planting_date = "2023-05-01"
 
 [crops.sugarbeet]
 name = "sugarbeet"
@@ -80,6 +89,7 @@ k_mid = 1.20
 k_end = 0.70
 height_m = 0.5
 growth_stages_days = [20, 30, 70, 20]
+planting_date = "2023-04-01"
 
 [crops.onion]
 name = "onion"
@@ -88,6 +98,7 @@ k_mid = 1.05
 k_end = 0.75
 height_m = 0.4
 growth_stages_days = [20, 30, 50, 20]
+planting_date = "2023-05-01"
 
 [crops.bean]
 name = "bean"
@@ -96,7 +107,26 @@ k_mid = 1.15
 k_end = 0.35
 height_m = 0.5
 growth_stages_days = [20, 30, 40, 20]
+planting_date = "2023-05-15"
+
+[crops.grass]
+name = "grass"
+k_ini = 0.40
+k_mid = 0.95
+k_end = 0.85
+height_m = 0.5
+growth_stages_days = [10, 20, 90, 30]
+planting_date = "2023-03-01"
+
+[crops.alfalfa]
+name = "alfalfa"
+k_ini = 0.40
+k_mid = 0.95
+k_end = 0.90
+height_m = 0.7
+growth_stages_days = [10, 20, 70, 20]
+planting_date = "2023-03-15"
 
 [climate]
-u2 = 2.0  # Wind speed at 2m height (m/s) - typical for subhumid conditions
-rh_min = 45.0  # Minimum relative humidity (%) - typical for subhumid conditions
+u2 = 2.0      # Wind speed at 2m height (m/s) - typical for subhumid conditions
+rh_min = 45.0 # Minimum relative humidity (%) - typical for subhumid conditions
